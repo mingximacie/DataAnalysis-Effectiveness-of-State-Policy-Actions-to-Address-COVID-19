@@ -1,0 +1,90 @@
+---
+title: "CSP 571 Project - Combining Datasets"
+author: "Roman Sydorchuk"
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+
+Getting the policies from the csv files:
+```{r}
+setwd("C:/Users/sydor/Documents/school_2020-2021/f2020_CSP571/Project/DataStuff/")
+
+policies <- read.csv(file = "state_policies.csv", header = T, sep = ",")
+statistics <- read.csv(file = "combined_secondary.csv", header = T, sep = ",")
+
+#making version column in both files be in the same format
+
+names(statistics)[4] <- "Version"
+
+policies$Version <- lapply(policies$Version, gsub, pattern = "_", replacement = "-", fixed = TRUE)
+
+policies$Version <- as.character(policies$Version)
+policies$Version <- as.Date(policies$Version)
+statistics$Version <- as.Date(statistics$Version)
+```
+
+Some more cleaning:
+```{r}
+#removes irrelevant lines
+policies <- subset(policies, X!="")
+
+#removes rows where version="postponed"
+policies <- subset(policies, !is.na(Version))
+
+#sorts by state first, then version
+policies <- policies[with(policies, order(X, Version)),]
+
+#removing Primary.Election.Postponement column
+policies <- subset(policies, select = -Primary.Election.Postponement)
+
+#removing some columns of statistics
+statistics <- subset(statistics, select = -c(X, Country_Region, Lat, Long_, FIPS, UID,ISO3))
+
+#renaming state column 
+names(policies)[1] <- "Province_State"
+```
+
+Combining state policies and covid statistics:
+```{r}
+total <- merge(statistics, policies, by = c("Province_State", "Version"))
+total2 <- bind_rows(statistics, policies)
+total3 <- inner_join(statistics, policies)
+total4 <- full_join(statistics, policies)
+```
+Cleaning of the combined datasets:
+```{r}
+if (!require("zoo")) install.packages("zoo")
+library(zoo)
+
+#sorts by state first, then version
+combined <- total4[with(total4, order(Province_State, Version)),]
+
+#get daily confirmed cases and deaths
+combined$Daily_Confirmed <- combined$Confirmed-lag(combined$Confirmed)
+combined$Daily_Deaths <- combined$Deaths-lag(combined$Deaths)
+
+#reordering
+combined <- combined[, c(1, 2, 24, 3, 25, 4:23)]
+
+#changing blanks and - in policies to NA
+combined[15:25][combined[15:25]==""] <- NA
+combined[15:25][combined[15:25]=="-"] <- NA
+
+#filling NAs with previous value
+combined_final <- data.frame()
+for (state in unique(combined$Province_State)) { 
+  state_data <- subset(combined, combined$Province_State == state)
+  state_data[15:25] <- na.locf(state_data[15:25], na.rm = FALSE)
+  
+  combined_final <- rbind(combined_final, state_data)
+}
+```
+
+```{r}
+write.csv(combined_final,"C:/Users/sydor/Documents/school_2020-2021/f2020_CSP571/Project/DataStuff/statistics_policies_combined.csv", row.names = FALSE)
+```
+

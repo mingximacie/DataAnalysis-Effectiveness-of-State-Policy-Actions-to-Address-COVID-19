@@ -1,0 +1,70 @@
+---
+title: "Confirmed and Deaths data of Alabama(2020-4-12 to 2020-8-31)"
+output: html_document
+---
+##package
+```{r} 
+library(ggplot2)
+```
+
+##Data
+```{r}
+data <- read.csv("/Users/mx/Desktop/csp 571data/statistics_policies_combined.csv",header=TRUE)
+Alabama <- subset(data, Province_State == "Alabama")
+Alabama <- data.frame(Alabama)
+```
+
+##Plots
+
+You can also embed plots, for example:
+
+```{r}
+#Stay.at.Home.Order:
+ggplot(Alabama, aes(x = Version, y = Confirmed)) + geom_point(aes(color = Stay.at.Home.Order))+geom_smooth(method = "lm")
+ggplot(Alabama, aes(x = Version, y = Deaths)) + geom_point(aes(color = Stay.at.Home.Order))+geom_smooth(method = "lm")
+ 
+#State.Is.Easing.Social.Distancing.Measures:
+ggplot(Alabama, aes(x = Version, y = Deaths )) + geom_point(aes(color=State.Is.Easing.Social.Distancing.Measures))
+ggplot(Alabama, aes(x = Version, y = Confirmed)) + geom_point(aes(color = State.Is.Easing.Social.Distancing.Measures))
+
+#Non.Essential.Business.Closures:
+ggplot(Alabama, aes(x = Version, y = Deaths )) + geom_point(aes(color = Non.Essential.Business.Closures))
+ggplot(Alabama, aes(x = Version, y = Confirmed )) + geom_point(aes(color = Non.Essential.Business.Closures))
+
+#Large.Gatherings.Ban
+ggplot(Alabama, aes(x = Version, y = Confirmed )) + geom_point(aes(color = Large.Gatherings.Ban))
+ggplot(Alabama, aes(x = Version, y = Deaths )) + geom_point(aes(color = Large.Gatherings.Ban))
+
+#Restaurant.Limits
+ggplot(Alabama, aes(x = Version, y = Confirmed )) + geom_point(aes(color = Restaurant.Limits))
+ggplot(Alabama, aes(x = Version, y = Deaths )) + geom_point(aes(color = Restaurant.Limits))
+
+#Emergency.Declaration
+ggplot(Alabama, aes(x = Version, y = Confirmed )) + geom_point(aes(color = Emergency.Declaration))
+ggplot(Alabama, aes(x = Version, y = Deaths )) + geom_point(aes(color = Emergency.Declaration))
+
+#Bar.Closures
+ggplot(Alabama, aes(x = Version, y = Confirmed )) + geom_point(aes(color = Bar.Closures))
+ggplot(Alabama, aes(x = Version, y = Deaths )) + geom_point(aes(color = Bar.Closures))
+
+```
+```{r}
+#School.Closures
+#This variable does not have much reference significance
+ggplot(Alabama, aes(x = Version, y = Confirmed )) + geom_point(aes(color = School.Closures))
+ggplot(Alabama, aes(x = Version, y = Deaths )) + geom_point(aes(color = School.Closures))
+
+#Face.Covering.Requirement
+##This variable does not have much reference significance
+ggplot(Alabama, aes(x = Version, y = Confirmed )) + geom_point(aes(color = Face.Covering.Requirement))
+ggplot(Alabama, aes(x = Version, y = Deaths )) + geom_point(aes(color = Face.Covering.Requirement))
+
+#Status.of.Reopening
+##This variable does not have much reference significance
+ggplot(Alabama, aes(x = Version, y = Confirmed )) + geom_point(aes(color = Status.of.Reopening))
+ggplot(Alabama, aes(x = Version, y = Deaths )) + geom_point(aes(color = Status.of.Reopening))
+```
+#For Alabama, the policy of School.Closures, Face.Covering.Requirement, Status.of.Reopening 
+#seem no much reference significance.
+#Because when the Confirmed and Deaths data increases,these three policy are in a positive state.
+

@@ -1,0 +1,41 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+if (!require("plyr")) install.packages("plyr")
+library(plyr)
+```
+
+
+```{r}
+setwd("D:/Kacper/School and Internship Work/Year 4 Sem 1/CSP 571 - Data Preperation and Analysis/PROJECT/COVID DATA/CSSEGISandData/COVID-19/csse_covid_19_data/csse_covid_19_daily_reports_us")
+
+file_list <- list.files()
+ldf <- lapply(file_list , read.csv)
+df.final <- do.call("rbind", ldf)
+
+write.csv(x=df.final, file="D:/Kacper/School and Internship Work/Year 4 Sem 1/CSP 571 - Data Preperation and Analysis/PROJECT/COVID DATA/daily_state_reports_1.csv")
+```
+
+```{r}
+setwd("D:/Kacper/School and Internship Work/Year 4 Sem 1/CSP 571 - Data Preperation and Analysis/PROJECT/COVID DATA/CSSEGISandData/COVID-19/csse_covid_19_data/csse_covid_19_daily_reports_us_2")
+
+file_list2 <- list.files()
+ldf2 <- lapply(file_list2 , read.csv)
+df.final2 <- do.call("rbind", ldf2)
+
+write.csv(x=df.final2, file="D:/Kacper/School and Internship Work/Year 4 Sem 1/CSP 571 - Data Preperation and Analysis/PROJECT/COVID DATA/daily_state_reports_2.csv")
+```
+
+```{r}
+names(df.final2)[names(df.final2) == 'Total_Test_Results'] <- 'People_Tested'
+names(df.final2)[names(df.final2) == 'Case_Fatality_Ratio'] <- 'Mortality_Rate'
+```
+
+```{r}
+df.final3 <- rbind(df.final, df.final2)
+write.csv(x=df.final3, file="D:/Kacper/School and Internship Work/Year 4 Sem 1/CSP 571 - Data Preperation and Analysis/PROJECT/COVID DATA/daily_state_reports_final.csv")
+```
+

@@ -1,0 +1,104 @@
+---
+title: "CSP571 Project Base Data Visualizations"
+output: html_notebook
+---
+
+#Packages
+
+```{r}
+if (!require("ggplot2")) install.packages("ggplot2")
+library(ggplot2)
+
+if (!require("zoo")) install.packages("zoo")
+library(zoo)
+```
+
+#Data Pull
+
+```{r}
+setwd("D:/Kacper/School and Internship Work/Year 4 Sem 1/CSP 571 - Data Preperation and Analysis/PROJECT/COVID DATA/Visualizations")
+
+combined_data <- read.csv(file="statistics_policies_combined_final.csv", header=TRUE)
+combined_data$Version <- as.Date(combined_data$Version, "%Y-%m-%d")
+```
+
+#Function definition
+
+```{r}
+graph_for_state <- function(state, policy, statistic, min_date, max_date) {
+  state_data <- subset(combined_data, combined_data$Province_State == state)
+  
+  state_data[policy][state_data[policy]=="-"] <- NA
+  state_data[policy] <- na.locf(state_data[policy], na.rm = FALSE)
+  state_data <- subset(state_data, state_data$Version >= min_date)
+  state_data <- subset(state_data, state_data$Version <= max_date)
+  
+  lims <- as.Date(c(min_date, max_date), "%Y-%m-%d")
+  
+  state_plot <- ggplot(state_data, aes(x = Version, 
+                                       y = state_data[,statistic], 
+                                       col=as.factor(state_data[,policy]))) +
+
+    #scale_y_continuous(limits = c(min(state_data$Mortality_Rate),max(state_data$Mortality_Rate))) +
+    scale_x_date(date_breaks = "2 weeks", 
+                 date_labels = "%b %d", 
+                 limits = lims, 
+                 #expand = c(0, 0)
+                 ) +
+    theme(axis.text.x = element_text(angle=45, 
+                                     hjust = 1)) +
+    geom_line() +
+    geom_point(shape = 16) +
+    labs(title=sprintf("%s Over Time in %s", statistic, state), 
+         x = "Date", 
+         y = statistic,
+         col = policy) + 
+    theme(legend.position="bottom", legend.title = element_text(face = "bold"))
+  
+  return(state_plot)
+}
+```
+
+#Call the function using the following syntax: 
+  graph_for_state(state, policy, statistic, min_date, max_date)
+  
+#where the input variables are defined as follows:
+
+#state 
+  Name of the state as a string.
+  
+#policy
+  Name of the policy as a string. Possible values can be found in the source link.
+  
+#statistic
+  Name of the statistic as a string. Possible values:
+  - Daily_Confirmed
+  - Confirmed
+  - Daily_Deaths
+  - Deaths
+  - Recovered
+  - Active
+  - Incident_Rate
+  - People_Tested
+  - People_Hospitalized
+  - Mortality_Rate
+  - Testing_Rate
+  - Hospitalization_Rate
+
+#min_date:
+  Minimum date for the x axis. The absolute minimum that the data allows for is "2020-04-12"
+
+#max_date: 
+  Maximum date for the x axis. The absolute maximum that the data allows for is "2020-08-31"
+
+```{r}
+graph_for_state("Texas", "C2_Workplace.closing", "Daily_Confirmed", "2020-04-12", "2020-11-30")
+```
+
+```{r}
+graph_for_state("Arkansas", "C4_Restrictions.on.gatherings", "Daily_Confirmed", "2020-04-12", "2020-11-30")
+```
+
+```{r}
+graph_for_state("Ohio", "C3_Cancel.public.events", "Mortality_Rate", "2020-04-12", "2020-08-31")
+```

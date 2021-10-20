@@ -1,0 +1,68 @@
+---
+title: "CSP 571 Project - Combining Datasets2"
+author: "Roman Sydorchuk"
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+
+Getting the policies from the csv files:
+```{r}
+if (!require("dplyr")) install.packages("dplyr")
+library(dplyr)
+
+setwd("C:/Users/sydor/Documents/school_2020-2021/f2020_CSP571/Project/DataStuff/")
+
+policies <- read.csv(file = "state_policies3.csv", header = T, sep = ",")
+statistics <- read.csv(file = "daily_state_reports_final.csv", header = T, sep = ",")
+
+#making version column in both files be in the same format
+
+policies$Version <- as.character(policies$Version)
+policies$Version <- as.Date(policies$Version)
+statistics$Version <- as.Date(statistics$Version)
+
+#sorts by state first, then version
+policies <- policies[with(policies, order(Province_State, Version)),]
+```
+
+```{r}
+total <- full_join(statistics, policies)
+```
+
+Cleaning of the combined datasets:
+```{r}
+if (!require("zoo")) install.packages("zoo")
+library(zoo)
+
+#sorts by state first, then version
+combined <- total[with(total, order(Province_State, Version)),]
+
+#get daily confirmed cases and deaths
+combined$Daily_Confirmed <- combined$Confirmed-lag(combined$Confirmed)
+combined$Daily_Deaths <- combined$Deaths-lag(combined$Deaths)
+
+#reordering
+combined <- combined[, c(1, 2, 61, 3, 62, 4:60)]
+
+#changing blanks and - in policies to NA
+#combined[15:25][combined[15:25]==""] <- NA
+#combined[15:25][combined[15:25]=="-"] <- NA
+
+#filling NAs with previous value
+#combined_final <- data.frame()
+#for (state in unique(combined$Province_State)) { 
+#  state_data <- subset(combined, combined$Province_State == state)
+#  state_data[15:25] <- na.locf(state_data[15:25], na.rm = FALSE)
+  
+#  combined_final <- rbind(combined_final, state_data)
+#}
+```
+
+```{r}
+write.csv(combined,"C:/Users/sydor/Documents/school_2020-2021/f2020_CSP571/Project/DataStuff/statistics_policies_combined3.csv", row.names = FALSE)
+```
+

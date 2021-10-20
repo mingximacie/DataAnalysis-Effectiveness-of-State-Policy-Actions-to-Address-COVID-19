@@ -1,0 +1,72 @@
+---
+title: "California"
+output: html_document
+---
+
+##DATA
+```{r}
+library(ggplot2)
+
+data <- read.csv("/Users/mx/Desktop/csp 571data/statistics_policies_combined.csv",header=TRUE)
+California<- subset(data, Province_State == "California")
+California<- data.frame(California)
+```
+
+##May be useful variables
+```{r}
+#Stay.at.Home.Order:
+#the impact is slow and small
+ggplot(California, aes(x = Version, y = Confirmed)) + geom_point(aes(color = Stay.at.Home.Order))
+ggplot(California, aes(x = Version, y = Deaths)) + geom_point(aes(color = Stay.at.Home.Order))
+ 
+#State.Is.Easing.Social.Distancing.Measures:
+ggplot(California, aes(x = Version, y = Deaths )) + geom_point(aes(color=State.Is.Easing.Social.Distancing.Measures))
+ggplot(California, aes(x = Version, y = Confirmed)) + geom_point(aes(color = State.Is.Easing.Social.Distancing.Measures))
+#Large.Gatherings.Ban
+#the impact is slow and small
+ggplot(California, aes(x = Version, y = Confirmed )) + geom_point(aes(color = Large.Gatherings.Ban))
+ggplot(California, aes(x = Version, y = Deaths )) + geom_point(aes(color = Large.Gatherings.Ban))
+
+#Face.Covering.Requirement
+##This impact is samll and slow
+ggplot(California, aes(x = Version, y = Confirmed )) + geom_point(aes(color = Face.Covering.Requirement))
+ggplot(California, aes(x = Version, y = Deaths )) + geom_point(aes(color = Face.Covering.Requirement))
+
+#Status.of.Reopening
+ggplot(California, aes(x = Version, y = Confirmed )) + geom_point(aes(color = Status.of.Reopening))
+ggplot(California, aes(x = Version, y = Deaths )) + geom_point(aes(color = Status.of.Reopening))
+
+#Bar.Closures
+###This impact is samll and slow
+ggplot(California, aes(x = Version, y = Confirmed )) + geom_point(aes(color = Bar.Closures))
+ggplot(California, aes(x = Version, y = Deaths )) + geom_point(aes(color = Bar.Closures))
+```
+
+##Have no much reference significance
+
+```{r}
+#Non.Essential.Business.Closures:
+#This variable does not have much reference significance
+ggplot(California, aes(x = Version, y = Deaths )) + geom_point(aes(color = Non.Essential.Business.Closures))
+ggplot(California, aes(x = Version, y = Confirmed )) + geom_point(aes(color = Non.Essential.Business.Closures))
+
+#School.Closures
+#have no much reference significance
+ggplot(California, aes(x = Version, y = Confirmed )) + geom_point(aes(color = School.Closures))
+ggplot(California, aes(x = Version, y = Deaths )) + geom_point(aes(color = School.Closures))
+
+#Restaurant.Limits
+#have no much reference significance
+ggplot(California, aes(x = Version, y = Confirmed )) + geom_point(aes(color = Restaurant.Limits))
+ggplot(California, aes(x = Version, y = Deaths )) + geom_point(aes(color = Restaurant.Limits))
+
+#Emergency.Declaration
+#This variable does not have much reference significance
+ggplot(California, aes(x = Version, y = Confirmed )) + geom_point(aes(color = Emergency.Declaration))
+ggplot(California, aes(x = Version, y = Deaths )) + geom_point(aes(color = Emergency.Declaration))
+```
+
+#For California, the policy of
+#Non.Essential.Business.Closures,Emergency.Declaration,Restaurant.Limits,School.Closures
+#seem have no much reference significance
+#Because when the Confirmed and Deaths data increases,these four policy are in a positive state.

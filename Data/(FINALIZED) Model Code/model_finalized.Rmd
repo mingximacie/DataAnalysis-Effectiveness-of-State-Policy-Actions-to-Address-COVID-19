@@ -1,0 +1,427 @@
+---
+title: "CSP571 Project Base Data Visualizations"
+output: html_notebook
+---
+
+#Packages
+
+```{r}
+if (!require("ggplot2")) install.packages("ggplot2")
+library(ggplot2)
+
+if (!require("zoo")) install.packages("zoo")
+library(zoo)
+
+if (!require("dplyr")) install.packages("dplyr")
+library(dplyr)
+
+if (!require("tidyr")) install.packages("tidyr")
+library(tidyr)
+```
+
+#Data Pull
+
+```{r}
+setwd("C:/Users/sydor/Downloads")
+
+combined_data <- read.csv(file="FINAL Dataset - Combined_11_30 (3).csv", header=TRUE)
+combined_data$Version <- as.Date(combined_data$Version, "%Y-%m-%d")
+```
+
+#Creates and returns plot for individual state
+
+```{r}
+graph_for_state <- function(state, policy, statistic, min_date, max_date) {
+  state_data <- subset(combined_data, combined_data$Province_State == state)
+  state_data <- subset(state_data, !is.na(state_data[,policy]))
+  state_data <- subset(state_data, !is.na(state_data[,statistic]))
+  
+  #state_data[policy][state_data[policy]=="-"] <- NA
+  #state_data[policy] <- na.locf(state_data[policy], na.rm = FALSE)
+  
+  lims <- as.Date(c(min_date, max_date), "%Y-%m-%d")
+  
+  state_plot <- ggplot(state_data, aes(x = Version, 
+                                       y = state_data[,statistic], 
+                                       col=as.factor(state_data[,policy]))) +
+
+    #scale_y_continuous(limits = c(min(state_data$Mortality_Rate),max(state_data$Mortality_Rate))) +
+    scale_x_date(date_breaks = "2 weeks", 
+                 date_labels = "%b %d", 
+                 limits = lims, 
+                 #expand = c(0, 0)
+                 ) +
+    theme(axis.text.x = element_text(angle=45, 
+                                     hjust = 1)) +
+    geom_line() +
+    geom_point(shape = 16) +
+    labs(title=sprintf("%s Over Time in %s", statistic, state), 
+         x = "Date", 
+         y = statistic,
+         col = policy) + 
+    theme(legend.position="bottom", legend.title = element_text(face = "bold"))
+  
+  return(state_plot)
+}
+```
+
+#Creates and returns model for individual state
+
+```{r}
+model_for_state <- function(state, policy, statistic, min_date, max_date) {
+  
+  state_data <- subset(combined_data, combined_data$Province_State == state)
+  state_data <- subset(state_data, state_data$Version >= min_date)
+  state_data <- subset(state_data, state_data$Version <= max_date)
+  state_data <- subset(state_data, !is.na(state_data[,policy]))
+  state_data <- subset(state_data, !is.na(state_data[,statistic]))
+  
+  loop <- unique(state_data[,policy])
+  
+  lm_list <- vector(mode = "list", length = length(loop))
+  #test <- c()
+  
+  for(i in loop){
+      policy_data <- subset(state_data, state_data[,policy]==i)
+      
+      lm <- lm(policy_data[,statistic] ~ policy_data$Version ,policy_data)
+      #lm_list[[i+1]] <- summary(lm)
+      lm_list[[i]] <- summary(lm)
+
+
+  }
+  return(lm_list)
+}
+```
+
+#Creates and returns all models for every state, given a policy, statistic, and minimum number of observations
+
+```{r}
+model_all_state <- function(policy, statistic, min_num_obs) {
+  cat("-----", policy, "-----")
+  states <- unique(combined_data$Province_State)
+  
+  #Removing United States, Virgin Islands, and Washington D.C. from data
+  states <- states[-c(44,47,50)]
+  
+  lm_list2 <- vector(mode = "list", length = length(states))
+  
+  for(i in 1:length(states)){
+    cat("\n\n")
+    cat(states[i], "(")
+    cat(i)
+    cat(")")
+    state_data <- subset(combined_data, combined_data$Province_State == states[i])
+    state_data <- subset(state_data, !is.na(state_data[,policy]))
+    state_data <- subset(state_data, !is.na(state_data[,statistic]))
+    
+    severity <- unique(state_data[,policy])
+    
+    for(k in 1:length(severity)){
+      cat("\n  Severity", severity[k])
+      cat("\n    Num_obs:", nrow(subset(state_data, state_data[,policy] == severity[k])))
+      if (is.na(subset(state_data, state_data[,policy] == severity[k])) | nrow(subset(state_data, state_data[,policy] == severity[k])) < min_num_obs){
+        cat("\n      Removing severity", severity[k])
+        cat(": only", nrow(subset(state_data, state_data[,policy] == severity[k])), "observation(s)")
+        state_data <- subset(state_data, state_data[,policy] != severity[k])
+      }
+    }
+    
+    severity <- unique(state_data[,policy])
+    cat("\n  Severities included:")
+    
+    if (length(severity)>0){
+      lm_list <- vector(mode = "list", length = length(severity))
+      for(j in 1:length(severity)){
+        cat("", severity[j])
+        
+        deep <- vector(mode = "list", length = 2)
+        policy_data <- subset(state_data, state_data[,policy] == severity[j])
+        
+        lm <- lm(policy_data[,statistic] ~ policy_data$Version, policy_data)
+        deep[[1]] <- lm
+        deep[[2]] <- severity[j]
+        
+        lm_list[[j]] <- deep
+      }
+    
+    lm_list2[[i]] <- lm_list
+    }
+    
+  }
+  cat("\n\n------------------------------")
+  return(lm_list2)
+}
+```
+
+#Same as previous, but with optional date range
+
+```{r}
+model_all_state_with_date_lim <- function(policy, statistic, min_date, max_date, min_num_obs) {
+  cat("-----", policy, "-----")
+  
+  states <- unique(combined_data$Province_State)
+  states <- states[-c(44,47,50)]
+  lm_list2 <- vector(mode = "list", length = length(states))
+  
+  for(i in 1:length(states)){
+    cat("\n\n")
+    cat(states[i], "(")
+    cat(i)
+    cat(")")
+    state_data <- subset(combined_data, combined_data$Province_State == states[i])
+    state_data <- subset(state_data, state_data$Version >= min_date)
+    state_data <- subset(state_data, state_data$Version <= max_date)
+    state_data <- subset(state_data, !is.na(state_data[,policy]))
+    state_data <- subset(state_data, !is.na(state_data[,statistic]))
+    
+    severity <- unique(state_data[,policy])
+    
+    for(k in 1:length(severity)){
+      cat("\n  Severity", severity[k])
+      cat("\n    Num_obs:", nrow(subset(state_data, state_data[,policy] == severity[k])))
+      
+      if (is.na(subset(state_data, state_data[,policy] == severity[k])) | nrow(subset(state_data, state_data[,policy] == severity[k])) < min_num_obs){
+        cat("\n      Removing severity", severity[k])
+        cat(": only", nrow(subset(state_data, state_data[,policy] == severity[k])), "observation(s)")
+        state_data <- subset(state_data, state_data[,policy] != severity[k])
+      }
+    }
+    
+    severity <- unique(state_data[,policy])
+    cat("\n  Severities included:")
+    
+    if (length(severity)>0){
+      lm_list <- vector(mode = "list", length = length(severity))
+      
+      for(j in 1:length(severity)){
+        cat("", severity[j])
+        
+        deep <- vector(mode = "list", length = 2)
+        policy_data <- subset(state_data, state_data[,policy] == severity[j])
+        
+        lm <- lm(policy_data[,statistic] ~ policy_data$Version, policy_data)
+        deep[[1]] <- lm
+        deep[[2]] <- severity[j]
+        
+        lm_list[[j]] <- deep
+      }
+    
+    lm_list2[[i]] <- lm_list
+    }
+    
+  }
+  cat("\n\n------------------------------")
+  return(lm_list2)
+}
+```
+
+#Removes models with large p-values, given a list of models and a maximum allowed p-value
+
+```{r}
+remove_large_p <- function(state_models, max_p) {
+  state_models_rm<-state_models
+  for(i in 1:length(state_models)){
+    cat("\n\nModel for state", i)
+    
+    for(j in 1:length(state_models[[i]])){
+      if(length(state_models[[i]][[j]][[1]]) > 0){
+        cat(":\n  Severity", state_models[[i]][[j]][[2]])
+        cat("\n    P-value:", summary(state_models[[i]][[j]][[1]])$coefficients[2,4])
+        
+        if(is.na(summary(state_models[[i]][[j]][[1]])$coefficients[2,4])) {
+          cat("\n    Removed: p-value is NA")
+          state_models_rm[[i]][[j]][[1]] <- "Removed"
+        } 
+        else if(summary(state_models[[i]][[j]][[1]])$coefficients[2,4] > max_p){
+          cat("\n    Removed: p-value is >", max_p)
+          state_models_rm[[i]][[j]][[1]] <- "Removed"
+        }
+      }
+    }
+  }
+  cat("\n\n------------------------------")
+  return(state_models_rm)
+}
+```
+
+#Gets coefficients from every model after removing unwanted models, given a list of wanted models
+
+```{r}
+get_coeff <- function(state_models_clean) {
+  severity0<-c()
+  severity1<-c()
+  severity2<-c()
+  severity3<-c()
+  severity4<-c()
+  
+  for(i in 1:length(state_models_clean)){
+    for(j in 1:length(state_models_clean[[i]])){
+      if (length(state_models_clean[[i]][[j]][[1]]) > 0){
+        if(state_models_clean[[i]][[j]][[1]] != "Removed"){
+          if(state_models_clean[[i]][[j]][[2]] == 0){
+            severity0<-c(severity0,summary(state_models_clean[[i]][[j]][[1]])$coefficients[2,1])
+          }
+          if(state_models_clean[[i]][[j]][[2]] == 1){
+            severity1<-c(severity1,summary(state_models_clean[[i]][[j]][[1]])$coefficients[2,1])
+          }
+          if(state_models_clean[[i]][[j]][[2]] == 2){
+            severity2<-c(severity2,summary(state_models_clean[[i]][[j]][[1]])$coefficients[2,1])
+          }
+          if(state_models_clean[[i]][[j]][[2]] == 3){
+            severity3<-c(severity3,summary(state_models_clean[[i]][[j]][[1]])$coefficients[2,1])
+          }
+          if(state_models_clean[[i]][[j]][[2]] == 4){
+            severity4<-c(severity4,summary(state_models_clean[[i]][[j]][[1]])$coefficients[2,1])
+          }
+        }
+      }
+    }
+  }
+  
+  combined_all <- as.data.frame(cbind(s0=severity0,s1=severity1,s2=severity2,s3=severity3, s4=severity4))
+  
+  return(combined_all)
+}
+```
+
+#Creates and returns boxplot of the spread of coefficients for each severity of a policy, given the list of coefficients and the statistic used (for the y-label)
+
+```{r}
+get_boxplot_coeff <- function(result, statistic) {
+  result_long <- gather(result, Severity, y, factor_key=TRUE)
+
+  ggplot(result_long, aes(x=Severity, y=y, fill=Severity)) + geom_boxplot() + labs(y=statistic)
+}
+```
+
+#Calculates the mean of the coefficients for each severity of a policy, given the list of coefficients
+
+```{r}
+get_mean_coeff <- function(result){
+  cat("\n\nMean of coefficients for each severity:\n")
+  colMeans(result)
+}
+```
+
+#Calls all functions needed for getting the coefficients
+
+```{r}
+do_all <- function(policy, statistic, max_p, min_num_obs){
+  state_models <- model_all_state(policy, statistic, min_num_obs)
+  state_models_clean <- remove_large_p(state_models, max_p)
+  state_models_coeff <- get_coeff(state_models_clean)
+  return (state_models_coeff)
+}
+```
+
+#Same as previous, but with optional date range
+
+```{r}
+do_all_with_date_lim <- function(policy, statistic, min_date, max_date, max_p, min_num_obs){
+  state_models <- model_all_state_with_date_lim(policy, statistic, min_date, max_date, min_num_obs)
+  state_models_clean <- remove_large_p(state_models, max_p)
+  state_models_coeff <- get_coeff(state_models_clean)
+  return (state_models_coeff)
+}
+```
+
+#Calling the functions
+
+```{r, warning=FALSE}
+policy <-"C2_Workplace.closing"
+#C1_School.closing
+#C2_Workplace.closing
+#C3_Cancel.public.events
+#C4_Restrictions.on.gatherings
+#C5_Close.public.transport
+#C6_Stay.at.home.requirements
+#C7_Restrictions.on.internal.movement
+#C8_International.travel.controls
+#H3_Contact.tracing
+#H6_Facial.Coverings
+
+statistic <-"Daily_Confirmed"
+#Daily_Confirmed
+#Confirmed
+#Daily_Deaths
+#Deaths
+#Mortality_Rate
+#Hospitalization_Rate
+
+#minimum number of observations required for model to be made
+min_num_obs <- 10
+
+#maximum p-value allowed for model - removed if higher
+max_p <- 0.05
+
+#getting models, plotting boxplot of coefficient spread, and getting mean of coefficients
+return <- do_all(policy, statistic, max_p, min_num_obs)
+get_boxplot_coeff(return, statistic)
+get_mean_coeff(return)
+```
+
+#Calling the functions, including optional date range
+
+```{r, warning=FALSE}
+policy <-"H6_Facial.Coverings"
+#C1_School.closing
+#C2_Workplace.closing
+#C3_Cancel.public.events
+#C4_Restrictions.on.gatherings
+#C5_Close.public.transport
+#C6_Stay.at.home.requirements
+#C7_Restrictions.on.internal.movement
+#C8_International.travel.controls
+#H3_Contact.tracing
+#H6_Facial.Coverings
+
+statistic <-"Daily_Confirmed"
+#Daily_Confirmed
+#Confirmed
+#Daily_Deaths
+#Deaths
+#Mortality_Rate
+#Hospitalization_Rate
+
+#minimum number of observations required for model to be made
+min_num_obs <- 10
+
+#date limits optional
+min_date <-"2020-04-12"
+max_date <- "2020-11-30"
+
+#maximum p-value allowed for model - removed if higher
+max_p <- 0.05
+
+#getting models, plotting boxplot of coefficient spread, and getting mean of coefficients
+return <- do_all_with_date_lim(policy, statistic, min_date, max_date, max_p, min_num_obs)
+get_boxplot_coeff(return, statistic)
+get_mean_coeff(return)
+```
+
+#Plotting data with linear model line for testing purposes
+
+```{r}
+test <- model_for_state("Alabama", "C2_Workplace.closing", "Daily_Confirmed", "2020-04-12", "2020-11-30")
+policy <- 3
+summary(test[[policy]])
+
+state_data <- subset(combined_data, combined_data$Province_State == "Alabama")
+policy_data <- subset(state_data, state_data$C2_Workplace.closing==policy)
+
+plot(policy_data$Version, policy_data$Daily_Confirmed, pch = 16, xlim= c(as.Date("2020-04-12"),as.Date("2020-11-30")), col = "red")
+abline(test[[policy]], col = "blue")
+```
+
+#Getting model and plotting for particular state for testing purposes 
+
+```{r}
+model_for_state("Texas", "C1_School.closing", "Daily_Deaths", "2020-04-12", "2020-10-30")
+graph_for_state("Florida", "C4_Restrictions.on.gatherings", "Daily_Confirmed", "2020-04-12", "2020-11-30")
+```
+
+```{r}
+graph_for_state("Texas", "C1_School.closing", "Daily_Deaths", "2020-04-12", "2020-11-30")
+```
+

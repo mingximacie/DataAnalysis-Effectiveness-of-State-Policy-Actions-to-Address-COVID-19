@@ -1,0 +1,74 @@
+---
+title: "Arizona"
+output: html_document
+---
+
+```{r}
+library(ggplot2)
+```
+
+## Data
+
+```{r}
+data <- read.csv("/Users/mx/Desktop/csp 571data/statistics_policies_combined.csv",header=TRUE)
+Arizona<- subset(data, Province_State == "Arizona")
+Arizona<- data.frame(Arizona)
+```
+
+##Useful varuable
+
+```{r}
+#Stay.at.Home.Order:
+ggplot(Arizona, aes(x = Version, y = Confirmed)) + geom_point(aes(color = Stay.at.Home.Order))+geom_smooth(method = "lm")
+ggplot(Arizona, aes(x = Version, y = Deaths)) + geom_point(aes(color = Stay.at.Home.Order))+geom_smooth(method = "lm")
+ 
+#State.Is.Easing.Social.Distancing.Measures:
+ggplot(Arizona, aes(x = Version, y = Deaths )) + geom_point(aes(color=State.Is.Easing.Social.Distancing.Measures))
+ggplot(Arizona, aes(x = Version, y = Confirmed)) + geom_point(aes(color = State.Is.Easing.Social.Distancing.Measures))
+
+#Mandatory.Quarantine.for.Travelers
+ggplot(Arizona, aes(x = Version, y = Deaths )) + geom_point(aes(color=Mandatory.Quarantine.for.Travelers))
+ggplot(Arizona, aes(x = Version, y = Confirmed)) + geom_point(aes(color = Mandatory.Quarantine.for.Travelers))
+
+#Large.Gatherings.Ban
+ggplot(Arizona, aes(x = Version, y = Confirmed )) + geom_point(aes(color = Large.Gatherings.Ban))
+ggplot(Arizona, aes(x = Version, y = Deaths )) + geom_point(aes(color = Large.Gatherings.Ban))
+
+#School.Closures
+ggplot(Arizona, aes(x = Version, y = Confirmed )) + geom_point(aes(color = School.Closures))
+ggplot(Arizona, aes(x = Version, y = Deaths )) + geom_point(aes(color = School.Closures))
+
+#Restaurant.Limits
+ggplot(Arizona, aes(x = Version, y = Confirmed )) + geom_point(aes(color = Restaurant.Limits))
+ggplot(Arizona, aes(x = Version, y = Deaths )) + geom_point(aes(color = Restaurant.Limits))
+#Face.Covering.Requirement
+ggplot(Arizona, aes(x = Version, y = Confirmed )) + geom_point(aes(color = Face.Covering.Requirement))
+ggplot(Arizona, aes(x = Version, y = Deaths )) + geom_point(aes(color = Face.Covering.Requirement))
+
+#Status.of.Reopening
+ggplot(Arizona, aes(x = Version, y = Confirmed )) + geom_point(aes(color = Status.of.Reopening))
+ggplot(Arizona, aes(x = Version, y = Deaths )) + geom_point(aes(color = Status.of.Reopening))
+
+#Bar.Closures
+ggplot(Arizona, aes(x = Version, y = Confirmed )) + geom_point(aes(color = Bar.Closures))
+ggplot(Arizona, aes(x = Version, y = Deaths )) + geom_point(aes(color = Bar.Closures))
+```
+
+##have no much reference significance
+```{r}
+#Non.Essential.Business.Closures:
+#This variable does not have much reference significance
+ggplot(Arizona, aes(x = Version, y = Deaths )) + geom_point(aes(color = Non.Essential.Business.Closures))
+ggplot(Arizona, aes(x = Version, y = Confirmed )) + geom_point(aes(color = Non.Essential.Business.Closures))
+
+#Emergency.Declaration
+#This variable does not have much reference significance
+ggplot(Arizona, aes(x = Version, y = Confirmed )) + geom_point(aes(color = Emergency.Declaration))
+ggplot(Arizona, aes(x = Version, y = Deaths )) + geom_point(aes(color = Emergency.Declaration))
+```
+#For Arizona, the policy of
+#Non.Essential.Business.Closures, Emergency.Declaration
+#seem have no much reference significance
+#Because when the Confirmed and Deaths data increases,these two policy are in a positive state
+
+
